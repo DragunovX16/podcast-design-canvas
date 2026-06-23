@@ -21,6 +21,8 @@ Support:
 
 The intro should preview as part of the episode, not as a detached template slide.
 
+When a creator swaps the music or sound cue placeholder, that choice should route through `docs/music-cue-setup.md` Placement Flow and `docs/music-sound-cues.md` Structural Routing so the cue stays attached to the intro or outro purpose instead of acting like a generic background track.
+
 ## Outro Elements
 
 Support:
@@ -38,6 +40,8 @@ Outro content should be easy to keep, remove, or adapt per episode.
 ## Template Behavior
 
 Reusable intros and outros should store structure and brand treatment while replacing episode-specific names, titles, and links for each new episode.
+
+Saved intro and outro cue choices should reuse the structural cue behavior described in `docs/music-cue-setup.md` Template Reuse and `docs/show-template-adaptation.md` Template Contents, so future episodes keep the intended opening or closing cue without freezing episode-specific names, links, or sponsor details.
 
 Intro and outro issues that would affect the chosen export destination should surface in `docs/export-readiness-review.md` Intro And Outro Warnings.
 

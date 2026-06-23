@@ -17,6 +17,18 @@ Music and sound cues should extend the placement workflow in `docs/music-cue-set
 
 Cue browsing should help a creator pick the right structural sound, not make them manage a second audio workflow.
 
+## Structural Routing
+
+Cue choices should stay attached to the episode structure that makes them meaningful.
+
+| Structural moment | Owning spec | Relevant section |
+| --- | --- | --- |
+| intro and outro cue placeholders | `docs/intro-outro-builder.md` | Intro Elements, Outro Elements, Creator Controls |
+| segment transition cues between planned show sections | `docs/show-segment-system.md` | Segment Types, Segment Behavior, Creator Controls |
+| template reuse of recurring structural cues | `docs/show-template-adaptation.md` | Template Contents, Adaptation Flow |
+
+The cue browser should send creators back to the owning intro, outro, or segment flow after a choice is made, rather than leaving structural cues as detached audio decisions.
+
 ## Cue Types
 
 Support simple cue categories:

@@ -37,6 +37,8 @@ Segments can influence:
 
 The product should preview how a segment changes the episode before applying it broadly.
 
+When a segment needs a transition sound, that cue should route through `docs/music-cue-setup.md` Placement Flow and `docs/music-sound-cues.md` Structural Routing so the creator picks a cue that matches the segment purpose instead of editing a detached audio timeline.
+
 ## Creator Controls
 
 Defining and applying segments should stay a creator-facing arranging step, not internal timeline marking. The creator should be able to:
