@@ -53,3 +53,7 @@ These states should appear during ingest readiness only when the mismatch would 
 ## Template Reuse
 
 When a show template includes recurring speakers, the product should remember their correction preferences from previous episodes and offer them as a starting point.
+
+Those remembered corrections should stay tied to `docs/show-template-adaptation.md` Adaptation Flow so the creator can keep a helpful starting point for recurring speakers without silently forcing the same correction onto a changed recording setup.
+
+If a recurring guest's look has changed, the creator should be able to reuse the prior preference, adjust it for this episode only, or skip it and keep the template preference for later episodes.
