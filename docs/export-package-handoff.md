@@ -16,9 +16,12 @@ The handoff should reflect the destination and checklist completed in:
 - `docs/show-notes-assembly.md`
 - `docs/thumbnail-cover-frame.md`
 - `docs/export-readiness-review.md`
+- `docs/render-failure-recovery.md`
 - `docs/client-review-copy-flow.md`
 
 Each package item should map to a creator-understood publishing outcome, not only a file extension.
+
+If the latest export attempt fails, the handoff should still make the last successful package visible and send the creator to `docs/render-failure-recovery.md` for the missing or failed output instead of pretending the whole delivery is gone.
 
 ## Package Contents
 

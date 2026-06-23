@@ -49,6 +49,18 @@ Failed exports should return creators to the relevant warning surface in `docs/e
 
 The product should clearly show the last successful preview or export when available.
 
+## Destination And Package Routing
+
+Recovery should preserve publishing intent and route creators back to the surface that owns the consequence of the failure, rather than leaving them at a generic retry screen.
+
+| Recovery situation | Owning spec | Relevant section |
+| --- | --- | --- |
+| retrying with a different delivery choice such as review copy or archive export | `docs/publish-destination-presets.md` | Destinations, Review States, Checklist Handling |
+| understanding which files are still usable from the last successful export | `docs/export-package-handoff.md` | Package Contents, Package States, Actions |
+| re-checking publish blockers after skipping an optional output such as captions or thumbnail export | `docs/publish-checklist.md` | Checklist Items, Destination Preset Handling, Completion |
+
+Recovery messaging should explain whether the creator is retrying the same destination, switching to a different destination, or sharing the last successful package while a failed item is still unresolved.
+
 ## Maintainer Acceptance Notes
 
 Accept work that makes render and export failures recoverable for creators. Close work that exposes infrastructure internals, loses episode decisions, or leaves creators with only a generic retry button.

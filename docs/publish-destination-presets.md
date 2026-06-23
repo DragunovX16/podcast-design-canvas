@@ -75,6 +75,8 @@ Reopened items can include:
 - sponsor disclosure expectations
 - final package contents
 
+When a failed export sends the creator into `docs/render-failure-recovery.md`, the destination preset should stay visible so the creator can tell whether they are retrying the same delivery, switching to a review copy, or falling back to an archive master.
+
 Checklist warnings should use the consequence language above, not generic settings errors.
 
 ## Maintainer Acceptance Notes
