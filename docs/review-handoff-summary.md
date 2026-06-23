@@ -13,6 +13,7 @@ The handoff should summarize open decisions from:
 - caption and spelling review in `docs/audio-caption-quality-review.md` and `docs/transcript-glossary.md`
 - contextual visuals in `docs/contextual-broll-moments.md` and `docs/sponsor-placement-review.md`
 - metadata readiness from `docs/episode-metadata-publishing.md`
+- destination-specific show notes from `docs/show-notes-assembly.md`
 - thumbnail candidates from `docs/thumbnail-cover-frame.md`
 - export warnings from `docs/export-readiness-review.md`
 - checklist approvals from `docs/publish-checklist.md`
@@ -30,6 +31,7 @@ Include:
 - unresolved warnings
 - moments needing approval
 - caption or spelling decisions
+- show notes decisions
 - sponsor placement status
 - metadata readiness
 - requested decision deadline
@@ -39,6 +41,7 @@ Include:
 Every review item should link to the relevant moment:
 
 - caption issue
+- show notes section
 - b-roll approval
 - sponsor placement
 - lower-third question

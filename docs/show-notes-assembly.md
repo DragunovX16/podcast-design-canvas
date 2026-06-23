@@ -40,6 +40,8 @@ Use simple states:
 
 These states should appear in `docs/publish-checklist.md` only when show notes affect the chosen destination or final export package.
 
+When another person needs to confirm chapter wording, guest links, sponsor text, or destination fit, those unresolved notes should also appear in `docs/review-handoff-summary.md` so the reviewer can approve the exact section without reopening the whole metadata flow.
+
 ## Publish Readiness
 
 Before export, show notes should:
