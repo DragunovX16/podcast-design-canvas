@@ -18,6 +18,19 @@ Support clear sources:
 
 Every cue should show whether the creator has usage approval before it can be used in a publishable export.
 
+## Usage Approval
+
+Usage approval should confirm the creator allowed this cue in the finished episode, not open a separate rights-management workflow.
+
+| Cue source | Source spec | Relevant section |
+| --- | --- | --- |
+| uploaded music file or reused show asset | `docs/episode-asset-library.md` | Safety Rules |
+| sponsor-provided track | `docs/sponsor-placement-review.md` | Sponsor Inputs |
+| saved show template cue | `docs/show-template-adaptation.md` | Template Contents |
+| starter cue from a preset style | `docs/preset-style-picker.md` | Preset Cards |
+
+Flag missing approval only when the cue is placed in the export, as described in `docs/export-readiness-review.md` Placed Cue Warnings. Unused library music and draft cues should not block readiness.
+
 ## Placement Flow
 
 Place music by episode purpose before exposing timing controls:
