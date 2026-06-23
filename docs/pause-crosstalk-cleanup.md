@@ -34,6 +34,8 @@ The product should show the surrounding context before suggesting a cleanup.
 
 Cleanup is review first: creators hear the moment in context and choose whether to soften it. Teaching pauses, emotional silence, and natural back-and-forth should stay unless the creator decides otherwise.
 
+If the problem is ongoing speaker loudness, room noise, or harshness across the episode rather than one conversational moment, the next step should stay in `docs/audio-cleanup-controls.md` instead of forcing repeated pause or cross-talk cleanup actions.
+
 ## Cleanup Actions
 
 Use simple actions:

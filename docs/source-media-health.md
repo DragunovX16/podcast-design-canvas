@@ -58,6 +58,8 @@ When a speaker's problem is mainly visual rather than missing media, the next st
 
 Audio-only and missing-file problems should stay in source health rather than redirecting into visual matching.
 
+When the file is usable but one speaker is too quiet, noisy, or uneven against the rest, the next step should open `docs/audio-cleanup-controls.md` instead of treating the track as broken source media.
+
 ## Maintainer Acceptance Notes
 
 Accept work that helps creators identify source media issues before styling and export. Close work that exposes raw codec diagnostics as the main experience or blocks progress for issues that do not affect the visible episode.
