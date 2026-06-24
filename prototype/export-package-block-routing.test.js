@@ -10,7 +10,23 @@ const path = require("path");
 const assert = require("assert");
 
 const dir = __dirname;
+const root = path.join(dir, "..");
 const html = fs.readFileSync(path.join(dir, "export-package-handoff.html"), "utf8");
+const shell = fs.readFileSync(path.join(root, "preview", "index.html"), "utf8");
+const publishNav = fs.readFileSync(path.join(root, "preview", "publish-nav.js"), "utf8");
+
+assert.ok(
+  shell.includes("../prototype/export-package-handoff.html"),
+  "export package handoff is reachable from the preview shell",
+);
+assert.ok(
+  publishNav.includes('id: "export-package-handoff"'),
+  "export package handoff is part of the connected publish prep path",
+);
+assert.ok(
+  shell.includes("../prototype/layout-safe-areas.html"),
+  "layout safe areas is reachable from the preview shell",
+);
 
 // The warnings render path appends an open-fix link when a warning declares one.
 assert.ok(
@@ -37,6 +53,20 @@ vm.createContext(sandbox);
 vm.runInContext(script, sandbox);
 const M = sandbox.module.exports;
 
+const review = M.destinations.youtube.warnings.find((w) => w[0] === "review" && w[1] === "Ignored sponsor overlay warning");
+assert.ok(review, "the YouTube package records the ignored sponsor overlay warning");
+assert.strictEqual(review[3], "layout-safe-areas.html", "ignored sponsor overlay routes to layout safe areas");
+assert.strictEqual(review[4], "layout safe areas", "ignored sponsor overlay names the fix screen in creator-facing copy");
+assert.ok(
+  fs.existsSync(path.join(dir, "layout-safe-areas.html")),
+  "layout safe areas exists as a real screen",
+);
+
+// A non-blocking warning without an owner carries no route (no false links).
+const omittedNotes = M.destinations.youtube.warnings.find((w) => w[1] === "Show notes omitted");
+assert.ok(omittedNotes && omittedNotes[3] === undefined, "informational warnings without an owner do not declare a fix screen");
+
+// Client review blocked warning still routes to speaker attribution review.
 const blocked = M.destinations.review.warnings.find((w) => w[0] === "blocked");
 assert.ok(blocked, "the client review copy has a blocked warning");
 assert.strictEqual(blocked[3], "speaker-attribution-review.html", "blocked caption routes to speaker attribution review");
@@ -47,7 +77,7 @@ assert.ok(
 );
 
 // A non-blocking warning carries no route (no false links).
-const review = M.destinations.youtube.warnings.find((w) => w[0] === "review");
-assert.ok(review && review[3] === undefined, "non-blocking warnings do not declare a fix screen");
+const reviewOnly = M.destinations.review.warnings.find((w) => w[0] === "review" && w[1].startsWith("If exported"));
+assert.ok(reviewOnly && reviewOnly[3] === undefined, "non-blocking warnings do not declare a fix screen");
 
 console.log("export package handoff: blocked required item routes to its owning review screen");
