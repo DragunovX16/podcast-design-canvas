@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Episode Runtime Shaping Prototype</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #16211f;
+        --muted: #5e6b67;
+        --line: #d9e0dd;
+        --panel: #f7faf8;
+        --accent: #136f63;
+        --warn: #a15c00;
+        --block: #a52828;
+        --info: #2a4c8a;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #ffffff;
+      }
+
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px 20px 48px;
+      }
+
+      h1, h2, h3, p { margin-top: 0; }
+
+      h1 {
+        font-size: 32px;
+        line-height: 1.1;
+        margin-bottom: 8px;
+      }
+
+      .lede {
+        color: var(--muted);
+        max-width: 780px;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.86fr);
+        gap: 24px;
+        margin-top: 28px;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 18px;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .summary-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 14px;
+      }
+
+      .summary-card strong {
+        display: block;
+        font-size: 26px;
+        line-height: 1;
+        margin-bottom: 6px;
+      }
+
+      .summary-card span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .toolbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 170px;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      input,
+      select {
+        width: 100%;
+        min-height: 40px;
+        border: 1px solid #bfcbc7;
+        border-radius: 6px;
+        background: #ffffff;
+        color: var(--ink);
+        font: inherit;
+        padding: 8px 10px;
+      }
+
+      .status-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        border-radius: 999px;
+        padding: 0 12px;
+        font-weight: 800;
+      }
+
+      .status.within { color: #075246; background: #dff5ef; }
+      .status.over { color: #7a4400; background: #fff1d6; }
+      .status.progress { color: #2a4c8a; background: #e2ebfb; }
+      .status.set-aside { color: #5e6b67; background: #eceeed; }
+      .status.none { color: #2f4a44; background: #eef4f2; }
+
+      .status-note {
+        color: var(--muted);
+        max-width: 620px;
+        font-size: 14px;
+      }
+
+      .segments {
+        display: grid;
+        gap: 14px;
+      }
+
+      .segment {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 14px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .segment-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .segment-head strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 15px;
+      }
+
+      .segment-head span,
+      .opportunity p,
+      .detail {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .badge {
+        display: inline-flex;
+        width: fit-content;
+        align-items: center;
+        min-height: 28px;
+        border-radius: 999px;
+        padding: 0 11px;
+        font-weight: 700;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      .badge.target { color: #075246; background: #dff5ef; }
+      .badge.long { color: #7a4400; background: #fff1d6; }
+      .badge.action { color: var(--info); background: #e2ebfb; }
+      .badge.keep { color: #5e6b67; background: #eceeed; }
+
+      .bar {
+        position: relative;
+        height: 14px;
+        border-radius: 999px;
+        background: #edf3f1;
+        overflow: hidden;
+      }
+
+      .bar i {
+        position: absolute;
+        inset: 0 auto 0 0;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #58b6a3, #136f63);
+      }
+
+      .opportunities {
+        display: grid;
+        gap: 10px;
+      }
+
+      .opportunity {
+        border-left: 4px solid var(--warn);
+        border-radius: 6px;
+        background: #fcfdfd;
+        padding: 10px 12px;
+      }
+
+      .opportunity.progress {
+        border-left-color: var(--info);
+      }
+
+      .opportunity.keep {
+        border-left-color: #9aa5a1;
+      }
+
+      .opportunity strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      button {
+        min-height: 38px;
+        border: 1px solid #b9c8c3;
+        border-radius: 6px;
+        background: #ffffff;
+        color: var(--ink);
+        font: inherit;
+        font-weight: 700;
+        padding: 7px 11px;
+        cursor: pointer;
+      }
+
+      button.primary {
+        border-color: var(--accent);
+        background: #def3ed;
+        color: var(--accent);
+      }
+
+      .sidebar-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .sidebar-item {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 12px;
+      }
+
+      .sidebar-item strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      @media (max-width: 920px) {
+        .workspace,
+        .toolbar,
+        .summary-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Episode Runtime Shaping Prototype</h1>
+      <p class="lede">
+        Review where a long-form episode spends its time, compare the current runtime against a target, and hand tightening decisions back to the surfaces that already own pauses, segments, and intro or outro edits.
+      </p>
+
+      <section class="workspace" aria-label="Episode runtime shaping workspace">
+        <div class="panel">
+          <h2>Runtime Overview</h2>
+
+          <div class="summary-grid">
+            <article class="summary-card">
+              <strong id="runtimeValue">68m</strong>
+              <span>Current finished runtime, including intro and outro.</span>
+            </article>
+            <article class="summary-card">
+              <strong id="targetValue">60m</strong>
+              <span>Show target for a standard full-length episode.</span>
+            </article>
+            <article class="summary-card">
+              <strong id="gapValue">+8m</strong>
+              <span>Difference from target, shown as guidance rather than a hard cap.</span>
+            </article>
+          </div>
+
+          <div class="toolbar">
+            <label>
+              Episode target length
+              <select id="targetSelect">
+                <option value="none">No target</option>
+                <option value="60" selected>60 minutes</option>
+                <option value="45">45 minutes</option>
+                <option value="75">75 minutes</option>
+              </select>
+            </label>
+            <label>
+              Runtime state
+              <select id="stateSelect">
+                <option value="over" selected>Over target</option>
+                <option value="within">Within target</option>
+                <option value="progress">Trimming in progress</option>
+                <option value="set-aside">Target set aside</option>
+                <option value="none">No target</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="status-row">
+            <span class="status over" id="runtimeStatus">over target</span>
+            <span class="status-note" id="statusNote">
+              The episode runs longer than the target, so the creator sees grouped opportunities to tighten without forcing any cut.
+            </span>
+          </div>
+
+          <div class="segments" id="segments"></div>
+        </div>
+
+        <aside class="panel" aria-live="polite">
+          <h2>Runtime Decisions</h2>
+          <p class="detail">
+            Runtime shaping stays overview-first. Each tightening action opens the surface that already owns that edit, rather than turning this step into a second timeline editor.
+          </p>
+
+          <div class="sidebar-list">
+            <article class="sidebar-item">
+              <strong>Pause and dead-air trims</strong>
+              <span>Open pause and cross-talk cleanup when silence or repeated restarts are the main runtime problem.</span>
+              <div class="chips">
+                <span class="badge action">pause cleanup</span>
+                <span class="badge keep">keep natural</span>
+              </div>
+            </article>
+
+            <article class="sidebar-item">
+              <strong>Segment length drift</strong>
+              <span>Open show segment review when one section is much longer than the template or expected show shape.</span>
+              <div class="chips">
+                <span class="badge action">segment review</span>
+                <span class="badge target">template-aware</span>
+              </div>
+            </article>
+
+            <article class="sidebar-item">
+              <strong>Optional intro or outro</strong>
+              <span>Open intro and outro builder when the episode can shorten the opening or closing without changing the conversation.</span>
+              <div class="chips">
+                <span class="badge action">intro/outro</span>
+                <span class="badge keep">episode-only</span>
+              </div>
+            </article>
+          </div>
+
+          <div class="actions" style="margin-top: 18px;">
+            <button type="button" class="primary" id="setAsideButton">Set target aside</button>
+            <button type="button" id="resetButton">Reset sample</button>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script>
+      const segments = [
+        {
+          title: "Cold open and intro",
+          context: "Host setup, teaser clip, and sponsor-safe opening.",
+          runtime: 7,
+          targetShare: 18,
+          badge: "long",
+          opportunities: [
+            {
+              kind: "intro",
+              title: "Optional intro can be shorter this episode",
+              detail: "The opener runs longer than the show default. Hand this off to intro and outro builder instead of cutting the conversation.",
+              badge: "action"
+            }
+          ]
+        },
+        {
+          title: "Main guest story",
+          context: "Launch origin, hiring mistakes, and first customer lessons.",
+          runtime: 31,
+          targetShare: 48,
+          badge: "target",
+          opportunities: [
+            {
+              kind: "pause",
+              title: "Long dead air already flagged nearby",
+              detail: "Pause cleanup found two long resets in this stretch. Tighten there first rather than trimming the whole segment.",
+              badge: "action"
+            }
+          ]
+        },
+        {
+          title: "Audience Q&A",
+          context: "Repeated examples and a slow tangent on hiring tools.",
+          runtime: 19,
+          targetShare: 24,
+          badge: "long",
+          opportunities: [
+            {
+              kind: "segment",
+              title: "Segment runs longer than the show's usual Q&A block",
+              detail: "Open show segment review to compare this section against the saved episode structure before changing pacing globally.",
+              badge: "action"
+            },
+            {
+              kind: "keep",
+              title: "Emotional closing answer may be worth keeping",
+              detail: "The final listener answer lands well and should stay unless the creator decides the target matters more this week.",
+              badge: "keep"
+            }
+          ]
+        },
+        {
+          title: "Outro and credits",
+          context: "Subscribe prompt, guest links, and next episode teaser.",
+          runtime: 11,
+          targetShare: 10,
+          badge: "long",
+          opportunities: [
+            {
+              kind: "intro",
+              title: "Outro teaser can be shortened for this episode",
+              detail: "The next-episode tease pushes the runtime up. Open intro and outro builder if the creator wants a lighter closing.",
+              badge: "action"
+            }
+          ]
+        }
+      ];
+
+      const stateMeta = {
+        over: {
+          label: "over target",
+          className: "over",
+          note: "The episode runs longer than the target, so the creator sees grouped opportunities to tighten without forcing any cut."
+        },
+        within: {
+          label: "within target",
+          className: "within",
+          note: "The finished runtime fits the target, so the creator can keep the current shape and still inspect where length lives."
+        },
+        progress: {
+          label: "trimming in progress",
+          className: "progress",
+          note: "The creator is already acting on pause, segment, or intro and outro opportunities. This view stays calm and points back to those owners."
+        },
+        "set-aside": {
+          label: "target set aside",
+          className: "set-aside",
+          note: "The creator chose to stop comparing this episode to the target and keep the current runtime without blocking export."
+        },
+        none: {
+          label: "no target",
+          className: "none",
+          note: "The current runtime is shown without comparing it to a target length. Runtime shaping stays informational only."
+        }
+      };
+
+      const segmentsEl = document.getElementById("segments");
+      const targetSelect = document.getElementById("targetSelect");
+      const stateSelect = document.getElementById("stateSelect");
+      const runtimeStatus = document.getElementById("runtimeStatus");
+      const statusNote = document.getElementById("statusNote");
+      const runtimeValue = document.getElementById("runtimeValue");
+      const targetValue = document.getElementById("targetValue");
+      const gapValue = document.getElementById("gapValue");
+      const resetButton = document.getElementById("resetButton");
+      const setAsideButton = document.getElementById("setAsideButton");
+
+      const totalRuntime = segments.reduce((sum, segment) => sum + segment.runtime, 0);
+
+      function renderSegments() {
+        segmentsEl.innerHTML = "";
+        segments.forEach((segment) => {
+          const article = document.createElement("article");
+          article.className = "segment";
+
+          const share = Math.max(8, Math.round((segment.runtime / totalRuntime) * 100));
+
+          article.innerHTML = `
+            <div class="segment-head">
+              <div>
+                <strong>${segment.title}</strong>
+                <span>${segment.context}</span>
+              </div>
+              <span class="badge ${segment.badge}">${segment.runtime}m</span>
+            </div>
+            <div class="bar" aria-hidden="true">
+              <i style="width:${share}%"></i>
+            </div>
+            <div class="detail">Represents about ${share}% of the finished runtime.</div>
+            <div class="opportunities">
+              ${segment.opportunities.map((opportunity) => `
+                <div class="opportunity ${opportunity.badge === "action" ? "progress" : opportunity.badge}">
+                  <strong>${opportunity.title}</strong>
+                  <p>${opportunity.detail}</p>
+                </div>
+              `).join("")}
+            </div>
+          `;
+
+          segmentsEl.appendChild(article);
+        });
+      }
+
+      function updateSummary() {
+        const target = targetSelect.value === "none" ? null : Number(targetSelect.value);
+        runtimeValue.textContent = `${totalRuntime}m`;
+        targetValue.textContent = target ? `${target}m` : "none";
+
+        if (!target) {
+          gapValue.textContent = "—";
+        } else {
+          const gap = totalRuntime - target;
+          gapValue.textContent = `${gap > 0 ? "+" : ""}${gap}m`;
+        }
+      }
+
+      function updateState() {
+        const state = stateMeta[stateSelect.value];
+        runtimeStatus.className = `status ${state.className}`;
+        runtimeStatus.textContent = state.label;
+        statusNote.textContent = state.note;
+      }
+
+      function resetSample() {
+        targetSelect.value = "60";
+        stateSelect.value = "over";
+        updateSummary();
+        updateState();
+        renderSegments();
+      }
+
+      targetSelect.addEventListener("change", updateSummary);
+      stateSelect.addEventListener("change", updateState);
+      setAsideButton.addEventListener("click", () => {
+        stateSelect.value = "set-aside";
+        updateState();
+      });
+      resetButton.addEventListener("click", resetSample);
+
+      resetSample();
+    </script>
+  </body>
+</html>
