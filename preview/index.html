@@ -287,12 +287,20 @@
         cursor: grab;
       }
 
+      .drag-chip[aria-pressed="true"] {
+        border-color: var(--accent);
+        background: #123d35;
+        color: #ffffff;
+      }
+
       .drag-chip.dragging {
         opacity: 0.72;
         cursor: grabbing;
       }
 
-      .drag-chip:focus-visible {
+      .drag-chip:focus-visible,
+      .drop-zone:focus-visible,
+      .canvas-reset:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 2px;
       }
@@ -345,7 +353,7 @@
       }
 
       .placed-remove:focus-visible {
-        outline: 2px solid #ffffff;
+        outline: 2px solid var(--accent);
         outline-offset: 2px;
       }
 
@@ -375,11 +383,6 @@
         font-weight: 700;
         padding: 0 12px;
         cursor: pointer;
-      }
-
-      .canvas-reset:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 2px;
       }
 
       .canvas-footer {
@@ -502,10 +505,10 @@
           <div>
             <h2 class="canvas-title" id="canvas-title">Example podcast layout canvas</h2>
             <p class="canvas-lede">Start with a concrete long-form episode composition: drag the host and guest into their video slots, keep the title and captions readable, and reserve a dedicated drop zone for b-roll moments.</p>
-            <div class="track-palette" aria-label="Drag speaker tracks onto the layout, or focus one and press Enter to place it">
-              <span class="drag-chip" draggable="true" data-track="host" tabindex="0" role="button" aria-keyshortcuts="Enter Space">Host track · Dana Brooks</span>
-              <span class="drag-chip" draggable="true" data-track="guest" tabindex="0" role="button" aria-keyshortcuts="Enter Space">Guest track · Marcus Lee</span>
-              <span class="drag-chip" draggable="true" data-track="broll" tabindex="0" role="button" aria-keyshortcuts="Enter Space">B-roll clip · intro beat</span>
+            <div class="track-palette" aria-label="Drag speaker tracks onto the layout, or choose one and activate its slot">
+              <button type="button" class="drag-chip" draggable="true" data-track="host" aria-pressed="false">Host track · Dana Brooks</button>
+              <button type="button" class="drag-chip" draggable="true" data-track="guest" aria-pressed="false">Guest track · Marcus Lee</button>
+              <button type="button" class="drag-chip" draggable="true" data-track="broll" aria-pressed="false">B-roll clip · intro beat</button>
             </div>
             <div class="canvas-toolbar">
               <p class="canvas-slot-status" id="canvas-slot-status" aria-live="polite">0 of 2 required speaker videos ready. Optional b-roll can be added later.</p>
@@ -515,11 +518,11 @@
               <span class="canvas-chip scene">Interview scene · intro beat</span>
               <span class="canvas-chip runtime">Host + guest · 58 min cut</span>
               <div class="speaker-row">
-                <div class="drop-zone host" data-slot="host">
+                <div class="drop-zone host" data-slot="host" tabindex="0" role="button" aria-label="Host video slot">
                   <span class="slot-label">Host video slot</span>
                   <span class="slot-note">Drop the host Riverside track here. Keep room for captions and chapter callouts.</span>
                 </div>
-                <div class="drop-zone guest" data-slot="guest">
+                <div class="drop-zone guest" data-slot="guest" tabindex="0" role="button" aria-label="Guest video slot">
                   <span class="slot-label">Guest video slot</span>
                   <span class="slot-note">Drop the guest track here, matched to framing and safe-area rules.</span>
                 </div>
@@ -529,7 +532,7 @@
                   <span class="slot-label">Caption area</span>
                   <div class="slot-note">Reserved for readable long-form captions and lower-thirds that never cover a speaker.</div>
                 </div>
-                <div class="title-slot drop-zone broll" data-slot="broll">
+                <div class="title-slot drop-zone broll" data-slot="broll" tabindex="0" role="button" aria-label="B-roll drop zone">
                   <span class="slot-label">B-roll drop zone</span>
                   <div class="slot-note">Place contextual visuals, title cards, or screen shares without hiding the conversation.</div>
                 </div>
@@ -983,6 +986,15 @@
           broll: "B-roll clip · intro beat",
         };
 
+        var selectedTrack = "";
+
+        function setSelectedTrack(track) {
+          selectedTrack = track || "";
+          document.querySelectorAll(".drag-chip").forEach(function (chip) {
+            chip.setAttribute("aria-pressed", chip.dataset.track === selectedTrack ? "true" : "false");
+          });
+        }
+
         document.querySelectorAll(".drag-chip").forEach(function (chip) {
           chip.addEventListener("dragstart", function (event) {
             event.dataTransfer.setData("text/plain", chip.dataset.track);
@@ -991,15 +1003,18 @@
           chip.addEventListener("dragend", function () {
             chip.classList.remove("dragging");
           });
-          // Keyboard equivalent of dragging: a focused chip places into its own slot on
-          // Enter/Space, so the canvas is operable without a pointer (WCAG 2.1.1).
-          chip.addEventListener("keydown", function (event) {
-            if (event.key !== "Enter" && event.key !== " " && event.key !== "Spacebar") {
+          chip.addEventListener("click", function () {
+            var track = chip.dataset.track;
+            if (selectedTrack === track) {
+              setSelectedTrack("");
+              updateSlotStatus("Selection cleared. Pick a track, then choose its slot.");
               return;
             }
-            event.preventDefault();
-            var track = chip.dataset.track;
-            placeTrack(document.querySelector('.drop-zone[data-slot="' + track + '"]'), track);
+            setSelectedTrack(track);
+            var slotName = track === "broll"
+              ? "B-roll drop zone"
+              : (track === "host" ? "host" : "guest") + " slot";
+            updateSlotStatus("Selected " + trackLabels[track] + ". Choose the " + slotName + ".");
           });
         });
 
@@ -1088,6 +1103,7 @@
             zone.appendChild(remove);
           }
           remove.setAttribute("aria-label", "Remove " + trackLabels[track]);
+          setSelectedTrack("");
           updateSlotStatus();
         }
 
@@ -1099,6 +1115,14 @@
           var remove = zone.querySelector(".placed-remove");
           if (remove) remove.remove();
           updateSlotStatus();
+        }
+
+        function activateZone(zone) {
+          if (!selectedTrack) {
+            updateSlotStatus("Pick a track first, then choose its slot.");
+            return;
+          }
+          placeTrack(zone, selectedTrack);
         }
 
         document.querySelectorAll(".drop-zone[data-slot]").forEach(function (zone) {
@@ -1114,10 +1138,21 @@
             zone.classList.remove("drag-over");
             placeTrack(zone, event.dataTransfer.getData("text/plain"));
           });
+          zone.addEventListener("click", function () {
+            activateZone(zone);
+          });
+          zone.addEventListener("keydown", function (event) {
+            if (event.key !== "Enter" && event.key !== " " && event.key !== "Spacebar") {
+              return;
+            }
+            event.preventDefault();
+            activateZone(zone);
+          });
         });
 
         if (resetButton) {
           resetButton.addEventListener("click", function () {
+            setSelectedTrack("");
             document.querySelectorAll(".drop-zone.filled").forEach(function (zone) {
               zone.classList.remove("filled");
               var placed = zone.querySelector(".placed-track");

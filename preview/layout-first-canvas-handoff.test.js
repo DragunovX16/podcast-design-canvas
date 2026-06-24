@@ -109,8 +109,9 @@ const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
 const script = html.match(/<script>\s*\(function \(\) \{([\s\S]*?)\}\(\)\);\s*<\/script>/)[1];
 
 const chips = ["host", "guest", "broll"].map((track) => {
-  const chip = new Element("span", "", "drag-chip");
+  const chip = new Element("button", "", "drag-chip");
   chip.dataset.track = track;
+  chip.attributes["aria-pressed"] = "false";
   return chip;
 });
 
@@ -203,42 +204,49 @@ assert.strictEqual(continueLink.attributes["aria-disabled"], "true");
 assert.strictEqual(continueLink.href, "");
 assert.strictEqual(slotStatus.textContent, "0 of 2 required speaker videos ready. Optional b-roll can be added later.");
 
-// Keyboard placement (WCAG 2.1.1): a focused chip places into its own slot on Enter/Space,
-// using the same fill + continue-unlock path as drag-and-drop. State is clean after reset.
-function keydown(chip, key) {
-  chip.listeners.keydown({ key, preventDefault() {} });
+// Select-then-place: choosing a chip and activating its slot unlocks Continue without a
+// pointer, so keyboard and touch users can clear the gated canvas.
+function keydown(zone, key) {
+  zone.listeners.keydown({ key, preventDefault() {} });
 }
 
-keydown(chips[0], "Enter");
+chips[0].click();
+assert.strictEqual(chips[0].attributes["aria-pressed"], "true", "clicking the host chip selects it");
+assert.match(slotStatus.textContent, /Choose the host slot/, "selection explains which slot to activate");
+keydown(zones.find((zone) => zone.dataset.slot === "host"), "Enter");
 assert.strictEqual(
   zones.find((zone) => zone.dataset.slot === "host").classList.contains("filled"),
   true,
-  "Enter on the focused host chip fills the host slot",
+  "activating the host slot places the selected host track",
 );
 assert.strictEqual(
   zones.find((zone) => zone.dataset.slot === "host").querySelector(".placed-track").textContent,
   "Host track · Dana Brooks",
-  "keyboard placement writes the same placed-track label as a drop",
+  "slot activation writes the same placed-track label as a drop",
 );
-keydown(chips[1], " ");
+assert.strictEqual(chips[0].attributes["aria-pressed"], "false", "placing a track clears its selected state");
+keydown(zones.find((zone) => zone.dataset.slot === "guest"), " ");
+assert.match(slotStatus.textContent, /Pick a track first/, "activating an empty slot prompts for track selection");
+chips[1].click();
+keydown(zones.find((zone) => zone.dataset.slot === "guest"), " ");
 assert.strictEqual(
   continueLink.attributes["aria-disabled"],
   "false",
-  "keyboard-placing host and guest unlocks Continue just like dragging",
+  "selecting chips and activating host and guest unlocks Continue just like dragging",
 );
 assert.strictEqual(
   continueLink.href,
   "./app.html#speaker-role-mapping?path=episode",
-  "keyboard placement carries the same speaker-roles handoff target",
+  "select-then-place carries the same speaker-roles handoff target",
 );
-assert.match(slotStatus.textContent, /Required speaker videos ready/, "keyboard placement updates readiness identically");
+assert.match(slotStatus.textContent, /Required speaker videos ready/, "select-then-place updates readiness identically");
 
 // A non-activating key is a no-op, so Tab still moves focus instead of placing.
-keydown(chips[2], "Tab");
+keydown(zones.find((zone) => zone.dataset.slot === "broll"), "Tab");
 assert.strictEqual(
   zones.find((zone) => zone.dataset.slot === "broll").classList.contains("filled"),
   false,
-  "a non-activating key does not place a chip",
+  "a non-activating key does not place a selected track",
 );
 
 // Per-track remove: a creator can clear a single placed track without resetting the whole
@@ -254,7 +262,8 @@ assert.strictEqual(hostZone.querySelector(".placed-track"), null, "the placed tr
 assert.strictEqual(guestZone.classList.contains("filled"), true, "removing one track leaves the others placed");
 assert.strictEqual(continueLink.attributes["aria-disabled"], "true", "Continue re-gates after a required track is removed");
 // Re-placing the cleared slot restores readiness.
-keydown(chips[0], "Enter");
+chips[0].click();
+keydown(hostZone, "Enter");
 assert.strictEqual(continueLink.attributes["aria-disabled"], "false", "re-placing the removed track restores Continue");
 
 console.log("layout-first canvas handoff: continue unlocks after required speaker videos while b-roll stays optional");

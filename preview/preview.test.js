@@ -31,9 +31,12 @@ assert.match(html, /Caption area/, "preview shell reserves a caption area on the
 assert.match(html, /B-roll drop zone/, "preview shell shows a contextual visuals drop zone");
 assert.match(html, /Drag speaker tracks onto the layout/, "preview shell exposes draggable speaker tracks for the example canvas");
 assert.match(html, /draggable="true"/, "preview shell marks example canvas tracks as draggable");
+assert.match(html, /aria-pressed="false"/, "preview shell exposes unselected track chips for select-then-place");
 assert.match(html, /data-slot="host"/, "preview shell labels the host video slot for drag-in placement");
 assert.match(html, /data-slot="guest"/, "preview shell labels the guest video slot for drag-in placement");
 assert.match(html, /data-slot="broll"/, "preview shell labels the b-roll slot for drag-in placement");
+assert.match(html, /role="button" aria-label="Host video slot"/, "preview shell exposes keyboard-activatable host slot");
+assert.match(html, /Pick a track first, then choose its slot/, "preview shell guides select-then-place activation when no track is selected");
 assert.match(html, /Reset layout/, "preview shell lets creators reset the example canvas layout");
 assert.match(html, /canvas-slot-status/, "preview shell shows live slot fill status on the example canvas");
 assert.match(html, /id="canvas-continue"/, "preview shell exposes a continue handoff from the example canvas");

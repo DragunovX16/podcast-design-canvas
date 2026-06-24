@@ -44,11 +44,13 @@ assert.match(shell, /Guest video slot/, "shell shows a guest drop zone in the ex
 assert.match(shell, /Caption area/, "shell shows a caption slot in the example canvas");
 assert.match(shell, /B-roll drop zone/, "shell shows a contextual visuals drop zone in the example canvas");
 assert.match(shell, /Drag speaker tracks onto the layout/, "shell exposes draggable tracks for the example canvas");
+assert.match(shell, /aria-pressed="false"/, "shell exposes selectable track chips on the example canvas");
 assert.match(shell, /data-slot="host"/, "shell labels the host slot for drag-in placement");
 assert.match(shell, /data-slot="guest"/, "shell labels the guest slot for drag-in placement");
 assert.match(shell, /Reset layout/, "shell exposes a reset control on the example canvas");
 assert.match(shell, /canvas-slot-status/, "shell shows slot fill status on the example canvas");
 assert.match(shell, /data-slot="broll"/, "shell labels the b-roll slot for drag-in placement");
+assert.match(shell, /role="button" aria-label="Host video slot"/, "shell exposes keyboard-activatable placement slots");
 assert.match(shell, /id="canvas-continue"/, "shell exposes a continue handoff from the example canvas");
 assert.match(shell, /speaker-role-mapping\?path=episode/, "shell continues from the example canvas into speaker roles");
 assert.match(shell, /Optional b-roll can be added later/, "shell treats b-roll as optional in the example canvas");
