@@ -12,11 +12,35 @@ const assert = require("assert");
 
 const root = path.join(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "prototype", "episode-readiness.html"), "utf8");
+const shell = fs.readFileSync(path.join(root, "preview", "index.html"), "utf8");
+const ingestNav = fs.readFileSync(path.join(root, "preview", "ingest-nav.js"), "utf8");
 const nextSetupSurface = "speaker-role-mapping.html";
 
 // Fix surfaces the readiness screen hands issues off to. Each key is also the
 // fix screen's filename (without extension).
-const fixSurfaces = ["source-media-health", "speaker-sync-repair", "social-context-intake"];
+const fixSurfaces = [
+  "speaker-role-mapping",
+  "source-media-health",
+  "speaker-sync-repair",
+  "social-context-intake",
+];
+
+assert.ok(
+  shell.includes("../prototype/episode-readiness.html"),
+  "episode readiness is reachable from the preview shell",
+);
+assert.ok(
+  ingestNav.includes('id: "episode-readiness"'),
+  "episode readiness is part of the connected ingest path",
+);
+assert.ok(
+  shell.includes("../prototype/speaker-role-mapping.html"),
+  "speaker role mapping is reachable from the preview shell",
+);
+assert.ok(
+  ingestNav.includes('id: "speaker-role-mapping"'),
+  "speaker role mapping is part of the connected ingest path",
+);
 
 for (const surface of fixSurfaces) {
   assert.ok(
@@ -28,6 +52,19 @@ for (const surface of fixSurfaces) {
     `fix surface ${surface}.html exists as a real screen`,
   );
 }
+
+assert.ok(
+  source.includes('key: "missing-host"'),
+  "missing host is evaluated as a readiness blocker",
+);
+assert.ok(
+  source.includes('fixSurface: "speaker-role-mapping"'),
+  "missing host routes to speaker role mapping",
+);
+assert.ok(
+  source.includes("Open speaker role mapping to assign one recording to the host bucket"),
+  "missing host routed copy names the role mapping screen",
+);
 
 // The routed confirmation is a navigable link, not a dead status note.
 assert.ok(
@@ -77,4 +114,4 @@ assert.ok(
 // Keep the DOM built without innerHTML, consistent with the other prototypes.
 assert.ok(!/innerHTML/.test(source), "episode readiness builds the DOM without innerHTML");
 
-console.log("episode readiness: routed issues and setup handoff link to real screens");
+console.log("episode readiness: missing host opens speaker role mapping; routed issues link to real screens");

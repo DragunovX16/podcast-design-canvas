@@ -295,6 +295,10 @@
       const nextSetupSurface = "speaker-role-mapping.html";
 
       const fixSurfaces = {
+        "speaker-role-mapping": {
+          label: "Assign the host role",
+          routed: "Open speaker role mapping.",
+        },
         "source-media-health": {
           label: "Replace or check the file",
           routed: "Continue in source media health.",
@@ -375,8 +379,8 @@
             key: "missing-host",
             severity: "blocker",
             title: "Missing host track",
-            action: "Assign one speaker recording to the host bucket before choosing a preset.",
-            fixSurface: "source-media-health",
+            action: "Open speaker role mapping to assign one recording to the host bucket before choosing a preset.",
+            fixSurface: "speaker-role-mapping",
           });
         }
 
