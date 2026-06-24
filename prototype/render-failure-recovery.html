@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Render Failure Recovery Prototype</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #16211f;
+        --muted: #5e6b67;
+        --line: #d9e0dd;
+        --panel: #f7faf8;
+        --accent: #136f63;
+        --warn: #a15c00;
+        --block: #a52828;
+        --info: #2a4c8a;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; color: var(--ink); background: #ffffff; }
+      main { max-width: 1180px; margin: 0 auto; padding: 32px 20px 48px; }
+      h1, h2, p { margin-top: 0; }
+      h1 { font-size: 32px; line-height: 1.1; margin-bottom: 8px; }
+      .lede { color: var(--muted); max-width: 780px; }
+      .workspace { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr); gap: 24px; margin-top: 28px; }
+      .panel { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 18px; }
+      .summary-card,
+      .choice,
+      .issue {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 12px;
+      }
+      .summary-card { margin-bottom: 16px; }
+      .summary-card strong,
+      .choice strong,
+      .issue strong { display: block; margin-bottom: 4px; }
+      .summary-card span,
+      .choice span,
+      .issue span,
+      .detail { color: var(--muted); font-size: 13px; }
+      .choices,
+      .issues { display: grid; gap: 12px; }
+      .choice { display: grid; gap: 10px; }
+      .choice-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+      .actions,
+      .route-links { display: flex; flex-wrap: wrap; gap: 10px; }
+      button,
+      .route-link {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-height: 38px; border: 1px solid #0f5d53; border-radius: 6px;
+        background: var(--accent); color: #ffffff; font: inherit; font-weight: 700;
+        padding: 8px 12px; cursor: pointer; text-decoration: none;
+      }
+      button.secondary,
+      .route-link { background: #ffffff; color: var(--accent); }
+      .badge,
+      .status {
+        display: inline-flex; align-items: center; border-radius: 999px;
+        font-size: 13px; font-weight: 800; white-space: nowrap;
+      }
+      .badge { min-height: 28px; padding: 0 11px; }
+      .status { min-height: 32px; padding: 0 12px; }
+      .failed { color: #8b1e1e; background: #ffe0e0; }
+      .retrying { color: #2a4c8a; background: #e2ebfb; }
+      .input { color: #7a4400; background: #fff1d6; }
+      .recovered { color: #075246; background: #dff5ef; }
+      .exported { color: #5f4a14; background: #f4ebcd; }
+      .set-aside { color: #5e6b67; background: #eceeed; }
+      .issue { border-left: 4px solid var(--warn); }
+      .issue.blocked { border-left-color: var(--block); }
+      .issue.info { border-left-color: var(--info); }
+      @media (max-width: 860px) {
+        .workspace { grid-template-columns: 1fr; }
+      }
+    </style>
+    <script src="../preview/publish-nav.js" defer></script>
+  </head>
+  <body data-publish-step="render-failure-recovery">
+    <main>
+      <h1>Render failure recovery</h1>
+      <p class="lede">When export fails, explain the episode-level problem, preserve finished decisions, and route the creator back to the owning fix surface or a safe fallback instead of leaving them in a dead retry loop.</p>
+
+      <section class="workspace" aria-label="Render failure recovery workspace">
+        <div class="panel">
+          <h2>Recovery actions</h2>
+          <div class="summary-card">
+            <strong id="activeTitle">A b-roll asset is missing from the final export</strong>
+            <span id="activeDetail">The export stopped after the timeline reached a missing supporting visual at 32:14.</span>
+          </div>
+          <div class="choices" id="choices"></div>
+          <div class="actions" style="margin-top: 16px;">
+            <button type="button" id="retry">Retry export</button>
+            <button type="button" class="secondary" id="setAside">Set aside</button>
+          </div>
+        </div>
+
+        <aside class="panel" aria-live="polite">
+          <h2>Recovery status</h2>
+          <div id="status" class="status failed">failed</div>
+          <div class="issues" id="issues" style="margin-top: 14px;"></div>
+          <div class="route-links" style="margin-top: 16px;">
+            <a class="route-link" id="primaryRoute" href="contextual-broll-moments.html">Open owning fix screen</a>
+            <a class="route-link" id="secondaryRoute" href="client-review-copy-flow.html">Create review copy instead</a>
+          </div>
+          <p class="detail" style="margin-top: 14px;">Recovery keeps export-readiness decisions, comments, template changes, and the last successful preview visible while the export is unfinished.</p>
+        </aside>
+      </section>
+    </main>
+
+    <script>
+      const sampleIssues = [
+        {
+          id: "missing-broll",
+          title: "A b-roll asset is missing from the final export",
+          detail: "The export stopped after the timeline reached a missing supporting visual at 32:14.",
+          primaryLabel: "Replace missing asset",
+          primaryRoute: "contextual-broll-moments.html",
+          primaryRouteLabel: "contextual b-roll moments",
+          secondaryLabel: "Create review copy instead",
+          secondaryRoute: "client-review-copy-flow.html",
+          secondaryAction: "set-aside",
+          consequence: "Skipping the missing visual keeps the episode exportable, but the final package records that one optional visual was exported around the issue.",
+        },
+        {
+          id: "caption-build",
+          title: "Captions could not be included in the export",
+          detail: "Speaker attribution changes reopened a caption check and the export stopped before captions were attached.",
+          primaryLabel: "Return to caption fix",
+          primaryRoute: "audio-caption-quality-review.html",
+          primaryRouteLabel: "audio caption quality review",
+          secondaryLabel: "Export without captions",
+          secondaryRoute: "export-package-handoff.html",
+          secondaryAction: "exported-around",
+          consequence: "Exporting without captions keeps the omission visible in the package handoff rather than treating it as resolved.",
+        },
+      ];
+
+      let activeIndex = 0;
+      let recoveryState = "failed";
+
+      const stateMeta = {
+        failed: { className: "failed", label: "failed" },
+        retrying: { className: "retrying", label: "retrying" },
+        "needs-input": { className: "input", label: "needs creator input" },
+        recovered: { className: "recovered", label: "recovered" },
+        "exported-around": { className: "exported", label: "exported around the issue" },
+        "set-aside": { className: "set-aside", label: "set aside" },
+      };
+
+      function issuesFor(state, issue) {
+        if (state === "retrying") {
+          return [{ tone: "info", title: "Retrying with the chosen recovery path", detail: `The export is running again after the creator chose "${issue.primaryLabel.toLowerCase()}".` }];
+        }
+        if (state === "needs-input") {
+          return [{ tone: "blocked", title: "Creator input still needed", detail: `Return to ${issue.primaryRouteLabel} before this export can recover cleanly.` }];
+        }
+        if (state === "recovered") {
+          return [{ tone: "info", title: "Recovered with a usable export", detail: "The creator can continue to package handoff without losing earlier decisions." }];
+        }
+        if (state === "exported-around") {
+          return [{ tone: "info", title: "Exported with the consequence still visible", detail: issue.consequence }];
+        }
+        if (state === "set-aside") {
+          return [{ tone: "info", title: "Export set aside without losing edits", detail: "The creator can return later with the last successful preview, comments, and readiness decisions still intact." }];
+        }
+        return [{ tone: "blocked", title: issue.title, detail: issue.detail }];
+      }
+
+      function onChoice(event) {
+        const action = event.target.dataset.action;
+        activeIndex = Number(event.target.dataset.index);
+        if (action === "primary") {
+          recoveryState = "needs-input";
+        } else if (action === "secondary") {
+          recoveryState = sampleIssues[activeIndex].secondaryAction;
+        }
+        render();
+      }
+
+      function renderChoices() {
+        const choicesEl = document.querySelector("#choices");
+        choicesEl.replaceChildren(
+          ...sampleIssues.map((issue, index) => {
+            const article = document.createElement("article");
+            article.className = "choice";
+            article.innerHTML = `
+              <div class="choice-head">
+                <div>
+                  <strong>${issue.title}</strong>
+                  <span>${issue.detail}</span>
+                </div>
+                <span class="badge ${index === activeIndex ? stateMeta[recoveryState].className : "failed"}">${index === activeIndex ? stateMeta[recoveryState].label : "failed"}</span>
+              </div>
+              <div class="actions">
+                <button type="button" data-action="select" data-index="${index}">Review issue</button>
+                <button type="button" class="secondary" data-action="primary" data-index="${index}">${issue.primaryLabel}</button>
+                <button type="button" class="secondary" data-action="secondary" data-index="${index}">${issue.secondaryLabel}</button>
+              </div>
+            `;
+            article.querySelectorAll("button").forEach((button) => button.addEventListener("click", onChoice));
+            return article;
+          }),
+        );
+      }
+
+      function renderStatus() {
+        const issue = sampleIssues[activeIndex];
+        const meta = stateMeta[recoveryState];
+        const statusEl = document.querySelector("#status");
+        statusEl.className = `status ${meta.className}`;
+        statusEl.textContent = meta.label;
+
+        document.querySelector("#activeTitle").textContent = issue.title;
+        document.querySelector("#activeDetail").textContent = `${issue.detail} ${issue.consequence}`;
+
+        const issuesEl = document.querySelector("#issues");
+        issuesEl.replaceChildren(
+          ...issuesFor(recoveryState, issue).map((entry) => {
+            const article = document.createElement("article");
+            article.className = `issue ${entry.tone}`;
+            const strong = document.createElement("strong");
+            strong.textContent = entry.title;
+            const span = document.createElement("span");
+            span.textContent = entry.detail;
+            article.append(strong, span);
+            return article;
+          }),
+        );
+
+        const primaryRoute = document.querySelector("#primaryRoute");
+        primaryRoute.href = issue.primaryRoute;
+        primaryRoute.textContent = `Open ${issue.primaryRouteLabel} →`;
+
+        const secondaryRoute = document.querySelector("#secondaryRoute");
+        secondaryRoute.href = issue.secondaryRoute;
+        secondaryRoute.textContent = issue.secondaryLabel;
+      }
+
+      function render() {
+        renderChoices();
+        renderStatus();
+      }
+
+      document.querySelector("#retry").addEventListener("click", () => {
+        recoveryState = recoveryState === "needs-input" ? "recovered" : "retrying";
+        render();
+      });
+
+      document.querySelector("#setAside").addEventListener("click", () => {
+        recoveryState = "set-aside";
+        render();
+      });
+
+      render();
+
+      if (typeof module !== "undefined" && module.exports) {
+        module.exports = { sampleIssues, stateMeta, issuesFor };
+      }
+    </script>
+  </body>
+</html>

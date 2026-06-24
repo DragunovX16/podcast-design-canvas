@@ -25,6 +25,7 @@ const publishScreens = [
   "thumbnail-cover-frame.html",
   "show-notes-assembly.html",
   "episode-metadata-publishing.html",
+  "render-failure-recovery.html",
   "export-package-handoff.html",
   "client-review-copy-flow.html",
   "publish-checklist.html",
@@ -169,7 +170,7 @@ assert.ok(
   "first publish screen renders the next publish step",
 );
 const firstStep = firstNav.find(
-  (node) => node.textContent === "Publish step 1 of 9 · Watch-through preview",
+  (node) => node.textContent === "Publish step 1 of 10 · Watch-through preview",
 );
 assert.ok(firstStep, "first publish screen renders its visible step label");
 assert.equal(firstStep.attributes["aria-current"], "step", "current publish step exposes aria-current");
@@ -245,6 +246,23 @@ assert.equal(
   standaloneNext.href,
   "episode-metadata-publishing.html?path=publish",
   "standalone publish nav keeps publish path context between publish prep screens",
+);
+const metadataNav = renderNavFor("episode-metadata-publishing.html", false, "?path=publish");
+assert.equal(
+  linkWithText(metadataNav, "Next: Render failure recovery").href,
+  "render-failure-recovery.html?path=publish",
+  "metadata publishing advances to render failure recovery in publish prep",
+);
+const recoveryNav = renderNavFor("render-failure-recovery.html", false, "?path=publish");
+assert.equal(
+  linkWithText(recoveryNav, "Previous: Episode metadata publishing").href,
+  "episode-metadata-publishing.html?path=publish",
+  "render failure recovery links back to metadata publishing",
+);
+assert.equal(
+  linkWithText(recoveryNav, "Next: Export package handoff").href,
+  "export-package-handoff.html?path=publish",
+  "render failure recovery advances to export package handoff",
 );
 const standaloneMetadataLinks = renderNavFor(
   "episode-metadata-publishing.html",
