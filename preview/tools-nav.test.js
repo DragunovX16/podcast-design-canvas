@@ -48,6 +48,7 @@ const publishFlow = new Set([
   "export-package-handoff.html",
   "clip-candidate-review.html",
   "client-review-copy-flow.html",
+  "review-handoff-summary.html",
   "publish-checklist.html",
 ]);
 

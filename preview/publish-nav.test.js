@@ -26,7 +26,9 @@ const publishScreens = [
   "show-notes-assembly.html",
   "episode-metadata-publishing.html",
   "export-package-handoff.html",
+  "clip-candidate-review.html",
   "client-review-copy-flow.html",
+  "review-handoff-summary.html",
   "publish-checklist.html",
 ];
 
@@ -169,7 +171,7 @@ assert.ok(
   "first publish screen renders the next publish step",
 );
 const firstStep = firstNav.find(
-  (node) => node.textContent === "Publish step 1 of 9 · Watch-through preview",
+  (node) => node.textContent === "Publish step 1 of 10 · Watch-through preview",
 );
 assert.ok(firstStep, "first publish screen renders its visible step label");
 assert.equal(firstStep.attributes["aria-current"], "step", "current publish step exposes aria-current");
@@ -181,7 +183,7 @@ assert.ok(
 
 const lastNav = renderNavFor("publish-checklist.html");
 assert.ok(
-  linkWithText(lastNav, "Previous: Client review copy"),
+  linkWithText(lastNav, "Previous: Review handoff summary"),
   "last publish screen renders the previous publish step",
 );
 const finish = linkWithText(lastNav, "Finish: back to the preview shell");
@@ -256,6 +258,23 @@ assert.equal(
   linkWithText(standaloneMetadataLinks, "publish-checklist.html").href,
   "publish-checklist.html?path=publish",
   "standalone publish nav keeps publish context on in-page publish links",
+);
+const reviewCopyNav = renderNavFor("client-review-copy-flow.html", false, "?path=publish");
+assert.equal(
+  linkWithText(reviewCopyNav, "Next: Review handoff summary").href,
+  "review-handoff-summary.html?path=publish",
+  "client review copy steps into review handoff summary with publish context",
+);
+const handoffNav = renderNavFor("review-handoff-summary.html", false, "?path=publish");
+assert.equal(
+  linkWithText(handoffNav, "Previous: Client review copy").href,
+  "client-review-copy-flow.html?path=publish",
+  "review handoff summary steps back to client review copy with publish context",
+);
+assert.equal(
+  linkWithText(handoffNav, "Next: Publish checklist").href,
+  "publish-checklist.html?path=publish",
+  "review handoff summary steps into the publish checklist with publish context",
 );
 assert.equal(
   linkWithText(standaloneMetadataLinks, "show-notes-assembly.html").href,

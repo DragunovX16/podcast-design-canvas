@@ -252,6 +252,23 @@ assert.equal(
   "publish path context is preserved when stepping forward inside publish prep",
 );
 
+publishPath.reroute("#review-handoff-summary?path=publish");
+assert.equal(
+  publishPath.nodes.frame.src,
+  "../prototype/review-handoff-summary.html?path=publish",
+  "publish path context loads review handoff summary with its route context",
+);
+assert.equal(
+  publishPath.nodes.prevStep.href,
+  "#client-review-copy-flow?path=publish",
+  "review handoff summary keeps publish path context on the previous step",
+);
+assert.equal(
+  publishPath.nodes.nextStep.href,
+  "#publish-checklist?path=publish",
+  "review handoff summary keeps publish path context on the next step",
+);
+
 publishPath.reroute("#export-readiness-review?path=publish");
 assert.equal(
   publishPath.nodes.frame.src,

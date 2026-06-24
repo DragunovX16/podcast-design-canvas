@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Review Handoff Summary Prototype</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #16211f;
+        --muted: #5e6b67;
+        --line: #d9e0dd;
+        --panel: #f7faf8;
+        --accent: #136f63;
+        --accent-ink: #075246;
+        --warn: #9b5d00;
+        --blocked: #9f2626;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; color: var(--ink); background: #ffffff; }
+      main { max-width: 1180px; margin: 0 auto; padding: 32px 20px 48px; }
+      h1, h2, h3, p { margin-top: 0; }
+      h1 { margin-bottom: 8px; font-size: 32px; line-height: 1.1; }
+      .lede { max-width: 780px; color: var(--muted); }
+      .workspace { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr); gap: 24px; margin-top: 28px; }
+      .panel { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 18px; }
+      .summary-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+      .summary-head strong { display: block; margin-bottom: 4px; font-size: 16px; }
+      .summary-head span, .meta-card span, .moment-item span, .note { color: var(--muted); }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        width: fit-content;
+        border-radius: 999px;
+        padding: 0 11px;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .badge.ready { color: var(--accent-ink); background: #dff5ef; }
+      .badge.review { color: var(--warn); background: #fff1d6; }
+      .badge.blocked { color: var(--blocked); background: #ffe0e0; }
+      .badge.done { color: #49625b; background: #e8eeeb; }
+      .meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 16px 0 18px; }
+      .meta-card, .moment-item, .warning, .note-box {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 12px;
+      }
+      .meta-card strong, .moment-item strong, .warning strong, .note-box strong { display: block; margin-bottom: 4px; }
+      .toolbar, .actions, .filters { display: flex; flex-wrap: wrap; gap: 10px; }
+      .toolbar { margin-bottom: 16px; }
+      button, a.fix-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        border: 1px solid #b9c8c3;
+        border-radius: 6px;
+        background: #ffffff;
+        color: var(--ink);
+        font: inherit;
+        font-weight: 700;
+        padding: 7px 11px;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      button.active { border-color: var(--accent); background: #def3ed; color: var(--accent-ink); }
+      button.primary { border-color: #0f5d53; background: var(--accent); color: #ffffff; }
+      button:disabled { opacity: 0.58; cursor: not-allowed; }
+      button:hover:not(:disabled), button:focus-visible, a.fix-link:hover, a.fix-link:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .moment-list { display: grid; gap: 10px; }
+      .moment-item { display: grid; gap: 10px; }
+      .moment-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+      .warning { border-left: 4px solid var(--warn); }
+      .warning.blocked { border-left-color: var(--blocked); }
+      .decision-row, .side-list { display: grid; gap: 10px; }
+      .decision-row { display: flex; flex-wrap: wrap; align-items: center; }
+      .note-box { margin-top: 14px; }
+      @media (max-width: 920px) {
+        .workspace { grid-template-columns: 1fr; }
+        .meta { grid-template-columns: 1fr 1fr; }
+      }
+    </style>
+    <script src="../preview/publish-nav.js" defer></script>
+  </head>
+  <body data-publish-step="review-handoff-summary">
+    <main>
+      <h1>Review Handoff Summary Prototype</h1>
+      <p class="lede">Send a reviewer only the decisions they can make, with direct links to episode moments, visible warnings, and the exact publish consequence if nothing changes.</p>
+
+      <section class="workspace">
+        <div class="panel">
+          <div class="toolbar" id="audiences"></div>
+
+          <div class="summary-head">
+            <div>
+              <strong id="episodeTitle">The Founder Story — Episode 12</strong>
+              <span id="episodeSubtitle">58 min · Interview split-screen · Warm documentary preset</span>
+            </div>
+            <span id="summaryState" class="badge review">needs decision</span>
+          </div>
+
+          <div class="meta" id="meta"></div>
+
+          <h2 style="margin-bottom: 10px;">Moments needing review</h2>
+          <div class="moment-list" id="momentList"></div>
+
+          <div class="actions" style="margin-top: 18px;">
+            <button type="button" class="primary" id="sendSummary">Send review summary</button>
+            <button type="button" id="resendSummary">Resend updated summary</button>
+            <button type="button" id="resolveFirst">Mark first open item resolved</button>
+            <a class="fix-link" id="openChecklist" href="publish-checklist.html">Open publish checklist</a>
+          </div>
+
+          <div class="note-box" id="statusNote" aria-live="polite"></div>
+        </div>
+
+        <aside class="panel">
+          <h2>Reviewer fit</h2>
+          <div class="filters" id="deadlines"></div>
+          <div class="side-list" id="warnings"></div>
+
+          <div class="note-box">
+            <strong>What this handoff avoids</strong>
+            <span class="note">No internal production diagnostics or generic project-management status. Every item points back to a visible episode moment or a publish-ready field.</span>
+          </div>
+
+          <div class="note-box">
+            <strong>What stays visible</strong>
+            <span class="note" id="summaryCounts"></span>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script>
+      const reviewerAudiences = [
+        ["client", "Client approver"],
+        ["producer", "Internal producer"],
+        ["host", "Host"],
+        ["guest", "Guest"],
+        ["sponsor", "Sponsor reviewer"],
+      ];
+
+      const deadlines = [
+        ["today", "Need decision today"],
+        ["48h", "Need decision in 48 hours"],
+        ["week", "Need decision this week"],
+      ];
+
+      const reviewItems = [
+        { id: "caption-name", title: "Confirm guest last-name spelling at 03:18", moment: "03:18", detail: "Caption shows 'Vasques' while metadata and chapter copy still say 'Vazquez'.", state: "needs decision", warning: "Publish metadata and captions disagree until one spelling is chosen.", owner: "audio-caption-quality-review.html", ownerLabel: "Open caption quality review", audiences: ["client", "producer", "host", "guest"] },
+        { id: "broll-approval", title: "Approve fundraising b-roll at 11:42", moment: "11:42", detail: "The review copy shows two logo wall options and needs one approval before final export.", state: "ready to approve", warning: "If left open, the final package keeps the current default wall choice visible as a consequence.", owner: "contextual-broll-moments.html", ownerLabel: "Open contextual b-roll", audiences: ["client", "producer", "host"] },
+        { id: "sponsor-read", title: "Confirm sponsor read timing at 19:42", moment: "19:42", detail: "Sponsor lower-third overlaps a long caption line and needs a timing decision.", state: "blocked", warning: "This destination cannot publish sponsor creative until timing is approved or the overlay is moved.", owner: "layout-safe-areas.html", ownerLabel: "Open layout safe areas", audiences: ["client", "producer", "sponsor"] },
+        { id: "thumbnail-pick", title: "Choose thumbnail candidate for the review copy", moment: "24:08", detail: "Two cover frames stay tied after the latest review round.", state: "needs decision", warning: "Without a choice, the publish checklist reopens the thumbnail item for this destination.", owner: "thumbnail-cover-frame.html", ownerLabel: "Open thumbnail review", audiences: ["client", "producer", "host"] },
+        { id: "guest-link", title: "Verify guest site link in episode metadata", moment: "Outro metadata", detail: "The review copy links the guest site in the description and chapter outro card.", state: "already approved", warning: "No publish consequence remains for this reviewer.", owner: "episode-metadata-publishing.html", ownerLabel: "Open metadata publishing", audiences: ["client", "producer", "guest"] },
+      ];
+
+      const stateMeta = {
+        "ready to approve": ["ready", "Ready to approve"],
+        "needs decision": ["review", "Needs decision"],
+        blocked: ["blocked", "Blocked"],
+        "already approved": ["done", "Already approved"],
+        "not relevant for this reviewer": ["done", "Not relevant"],
+      };
+
+      function itemsForAudience(audience, items = reviewItems) {
+        return items.map((item) => item.audiences.includes(audience) ? item : { ...item, state: "not relevant for this reviewer" });
+      }
+
+      function summaryCountsFor(items) {
+        return items.reduce((counts, item) => {
+          counts.total += 1;
+          if (item.state === "needs decision") counts.needsDecision += 1;
+          if (item.state === "ready to approve") counts.ready += 1;
+          if (item.state === "blocked") counts.blocked += 1;
+          if (item.state === "already approved") counts.approved += 1;
+          if (item.state === "not relevant for this reviewer") counts.notRelevant += 1;
+          return counts;
+        }, { total: 0, needsDecision: 0, ready: 0, blocked: 0, approved: 0, notRelevant: 0 });
+      }
+
+      function reviewCopyStatus(items) {
+        const counts = summaryCountsFor(items);
+        if (counts.blocked > 0) return "blocked";
+        if (counts.needsDecision > 0) return "needs decision";
+        if (counts.ready > 0) return "ready to approve";
+        return "already approved";
+      }
+
+      function deadlineLabel(deadlineId) {
+        return deadlines.find(([id]) => id === deadlineId)?.[1] || "Need decision this week";
+      }
+
+      function canSendSummary(items) {
+        return items.some((item) => item.state !== "not relevant for this reviewer");
+      }
+
+      function nextResolvableIndex(items) {
+        return items.findIndex((item) => item.state === "needs decision" || item.state === "ready to approve");
+      }
+
+      if (typeof document !== "undefined") {
+        let selectedAudience = "client";
+        let selectedDeadline = "48h";
+        let resendCount = 0;
+        let sentOnce = false;
+        let items = itemsForAudience(selectedAudience);
+
+        const audiencesEl = document.querySelector("#audiences");
+        const deadlinesEl = document.querySelector("#deadlines");
+        const summaryStateEl = document.querySelector("#summaryState");
+        const metaEl = document.querySelector("#meta");
+        const momentListEl = document.querySelector("#momentList");
+        const warningsEl = document.querySelector("#warnings");
+        const summaryCountsEl = document.querySelector("#summaryCounts");
+        const statusNoteEl = document.querySelector("#statusNote");
+        const sendSummaryButton = document.querySelector("#sendSummary");
+        const resendSummaryButton = document.querySelector("#resendSummary");
+        const resolveFirstButton = document.querySelector("#resolveFirst");
+
+        function setStatusNote(message) {
+          statusNoteEl.replaceChildren();
+          const strong = document.createElement("strong");
+          strong.textContent = "Review handoff status";
+          const span = document.createElement("span");
+          span.className = "note";
+          span.textContent = message;
+          statusNoteEl.append(strong, span);
+        }
+
+        function renderAudiences() {
+          audiencesEl.replaceChildren(...reviewerAudiences.map(([id, label]) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = label;
+            if (id === selectedAudience) button.className = "active";
+            button.addEventListener("click", () => {
+              selectedAudience = id;
+              items = itemsForAudience(selectedAudience);
+              render();
+            });
+            return button;
+          }));
+        }
+
+        function renderDeadlines() {
+          deadlinesEl.replaceChildren(...deadlines.map(([id, label]) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = label;
+            if (id === selectedDeadline) button.className = "active";
+            button.addEventListener("click", () => {
+              selectedDeadline = id;
+              render();
+            });
+            return button;
+          }));
+        }
+
+        function renderMeta() {
+          const counts = summaryCountsFor(items);
+          const cards = [
+            ["Review copy", sentOnce ? "Sent to reviewers" : "Ready to send"],
+            ["Decision deadline", deadlineLabel(selectedDeadline)],
+            ["Warnings still visible", `${counts.blocked + counts.needsDecision}`],
+            ["Audience fit", reviewerAudiences.find(([id]) => id === selectedAudience)[1]],
+          ];
+          metaEl.replaceChildren(...cards.map(([label, value]) => {
+            const card = document.createElement("div");
+            card.className = "meta-card";
+            const strong = document.createElement("strong");
+            strong.textContent = label;
+            const span = document.createElement("span");
+            span.textContent = value;
+            card.append(strong, span);
+            return card;
+          }));
+        }
+
+        function renderItem(item, index) {
+          const article = document.createElement("article");
+          article.className = "moment-item";
+          const top = document.createElement("div");
+          top.className = "moment-top";
+          const text = document.createElement("div");
+          const strong = document.createElement("strong");
+          strong.textContent = item.title;
+          const detail = document.createElement("span");
+          detail.textContent = `${item.moment} · ${item.detail}`;
+          text.append(strong, detail);
+          const badge = document.createElement("span");
+          const [badgeClass, badgeLabel] = stateMeta[item.state];
+          badge.className = `badge ${badgeClass}`;
+          badge.textContent = badgeLabel;
+          top.append(text, badge);
+          const warning = document.createElement("span");
+          warning.textContent = item.warning;
+          const row = document.createElement("div");
+          row.className = "decision-row";
+          const open = document.createElement("a");
+          open.className = "fix-link";
+          open.href = item.owner;
+          open.textContent = item.ownerLabel;
+          const cycle = document.createElement("button");
+          cycle.type = "button";
+          cycle.textContent = item.state === "already approved" ? "Mark not relevant" : "Mark approved";
+          cycle.disabled = item.state === "blocked";
+          cycle.addEventListener("click", () => {
+            items[index] = { ...item, state: item.state === "already approved" ? "not relevant for this reviewer" : "already approved" };
+            render();
+          });
+          row.append(open, cycle);
+          article.append(top, warning, row);
+          return article;
+        }
+
+        function renderWarnings() {
+          const counts = summaryCountsFor(items);
+          const warnings = [
+            { className: counts.blocked > 0 ? "warning blocked" : "warning", title: counts.blocked > 0 ? "Blocked decisions remain" : "Blocked decisions cleared", detail: counts.blocked > 0 ? "Sponsor timing or another required review item still blocks the destination." : "No required reviewer decision currently blocks the destination." },
+            { className: "warning", title: "Publish consequence stays visible", detail: "Ignored or still-open review decisions must remain attached to the package handoff and checklist instead of disappearing after resend." },
+            { className: "warning", title: "Moment links stay specific", detail: "Each review item opens its owning episode moment or metadata surface directly so reviewers never search the timeline manually." },
+          ];
+          warningsEl.replaceChildren(...warnings.map((entry) => {
+            const card = document.createElement("div");
+            card.className = entry.className;
+            const strong = document.createElement("strong");
+            strong.textContent = entry.title;
+            const span = document.createElement("span");
+            span.textContent = entry.detail;
+            card.append(strong, span);
+            return card;
+          }));
+        }
+
+        function renderSummaryState() {
+          const state = reviewCopyStatus(items);
+          const [badgeClass, badgeLabel] = stateMeta[state];
+          summaryStateEl.className = `badge ${badgeClass}`;
+          summaryStateEl.textContent = badgeLabel;
+        }
+
+        function renderCounts() {
+          const counts = summaryCountsFor(items);
+          summaryCountsEl.textContent = `${counts.ready} ready to approve, ${counts.needsDecision} needing decisions, ${counts.blocked} blocked, and ${counts.approved} already approved for this audience.`;
+        }
+
+        function renderActions() {
+          const sendable = canSendSummary(items);
+          sendSummaryButton.disabled = !sendable || sentOnce;
+          resendSummaryButton.disabled = !sentOnce;
+          resolveFirstButton.disabled = nextResolvableIndex(items) === -1;
+        }
+
+        function renderMoments() {
+          momentListEl.replaceChildren(...items.map(renderItem));
+        }
+
+        function render() {
+          renderAudiences();
+          renderDeadlines();
+          renderSummaryState();
+          renderMeta();
+          renderMoments();
+          renderWarnings();
+          renderCounts();
+          renderActions();
+          if (!statusNoteEl.children.length) {
+            setStatusNote("Choose the reviewer audience, confirm the deadline, and send a concise decision-only summary.");
+          }
+        }
+
+        function sendReviewSummary() {
+          sentOnce = true;
+          render();
+          setStatusNote(`${reviewerAudiences.find(([id]) => id === selectedAudience)[1]} review summary sent with ${deadlineLabel(selectedDeadline).toLowerCase()} and ${summaryCountsFor(items).needsDecision} decision item(s).`);
+        }
+
+        function resendUpdatedSummary() {
+          resendCount += 1;
+          render();
+          setStatusNote(`Updated review summary resent. Review round ${resendCount + 1} keeps unresolved consequences visible for the publish checklist.`);
+        }
+
+        function markFirstOpenItemResolved() {
+          const index = nextResolvableIndex(items);
+          if (index === -1) {
+            setStatusNote("No decision-first item remains open for this reviewer.");
+            return;
+          }
+          items[index] = { ...items[index], state: "already approved" };
+          render();
+          setStatusNote(`Marked "${items[index].title}" resolved and kept the rest of the review handoff unchanged.`);
+        }
+
+        document.querySelector("#sendSummary").addEventListener("click", sendReviewSummary);
+        document.querySelector("#resendSummary").addEventListener("click", resendUpdatedSummary);
+        document.querySelector("#resolveFirst").addEventListener("click", markFirstOpenItemResolved);
+        render();
+      }
+
+      if (typeof module !== "undefined") {
+        module.exports = { reviewerAudiences, deadlines, reviewItems, stateMeta, itemsForAudience, summaryCountsFor, reviewCopyStatus, deadlineLabel, canSendSummary, nextResolvableIndex };
+      }
+    </script>
+  </body>
+</html>

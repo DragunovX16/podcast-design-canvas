@@ -19,6 +19,7 @@ const PUBLISH_FLOW = [
   { id: "export-package-handoff", file: "export-package-handoff.html", label: "Export package handoff" },
   { id: "clip-candidate-review", file: "clip-candidate-review.html", label: "Clip candidate review" },
   { id: "client-review-copy-flow", file: "client-review-copy-flow.html", label: "Client review copy" },
+  { id: "review-handoff-summary", file: "review-handoff-summary.html", label: "Review handoff summary" },
   { id: "publish-checklist", file: "publish-checklist.html", label: "Publish checklist" },
 ];
 
