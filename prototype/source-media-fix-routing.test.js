@@ -12,11 +12,26 @@ const assert = require("assert");
 
 const root = path.join(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "prototype", "source-media-health.html"), "utf8");
+const shell = fs.readFileSync(path.join(root, "preview", "index.html"), "utf8");
+const speakerSetupNav = fs.readFileSync(path.join(root, "preview", "speaker-setup-nav.js"), "utf8");
 
 // Fix surfaces the source screen hands issues off to. Each is also a filename.
 // A sideways (portrait) track that won't fill a widescreen layout is a framing
 // problem, so it routes to the speaker framing safety screen.
 const fixSurfaces = ["speaker-visual-match", "audio-cleanup-controls", "speaker-framing-safety"];
+
+assert.ok(
+  shell.includes("../prototype/source-media-health.html"),
+  "source media health is reachable from the preview shell",
+);
+assert.ok(
+  shell.includes("../prototype/speaker-visual-match.html"),
+  "speaker visual match is reachable from the preview shell",
+);
+assert.ok(
+  speakerSetupNav.includes('id: "speaker-visual-match"'),
+  "speaker visual match is part of the connected speaker setup path",
+);
 
 for (const surface of fixSurfaces) {
   assert.ok(
@@ -62,6 +77,14 @@ assert.ok(
 assert.ok(
   source.includes('action: "Open visual match to compare a sharper take'),
   "out-of-focus video routes to and names the visual match screen",
+);
+assert.ok(
+  source.includes('fixSurface: "speaker-visual-match"'),
+  "motion mismatch declares speaker visual match as its fix surface",
+);
+assert.ok(
+  source.includes("Open visual match to compare how this speaker looks beside the host"),
+  "motion mismatch routed copy names the visual match screen",
 );
 
 console.log("source media health: routed issues link to their fix screens");
